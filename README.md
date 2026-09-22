@@ -17,6 +17,14 @@
 
 在 **Termux** 中执行（不支持，也不需要 root）：
 
+**国内网络（推荐，实测可用）：**
+
+```bash
+bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/sunc-Q/bililive-go-termux/main/install.sh)"
+```
+
+**国际网络 / 直连：**
+
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/sunc-Q/bililive-go-termux/main/install.sh)"
 ```
