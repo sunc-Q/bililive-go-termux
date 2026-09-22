@@ -1,0 +1,114 @@
+#!/data/data/com.termux/files/usr/bin/sh
+# bl —— bililive-go(Termux 原生实例) 一键管理
+# 用法: bl start|stop|restart|status|log [参数]
+#   bl start        启动（若 22290 被 proot 容器实例占用则拒绝并提示）
+#   bl start -f     强制启动：先停掉 proot 容器里那套 bililive-go，再启动本套
+#   bl stop         停止
+#   bl restart      重启（可带 -f）
+#   bl status       查看运行状态
+#   bl log [行数]   看日志尾部（默认 40 行）
+
+DIR="$HOME/bililive"
+PIDF="$DIR/bililive.pid"
+LOG="$DIR/run.log"
+PORT=22290
+
+running() { [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null; }
+
+port_busy() {
+  # 注：本机内核 /proc/net/tcp 不全（实测看不到 22290），必须用 netstat
+  netstat -tln 2>/dev/null | grep -q ":$PORT "
+}
+
+stop_proot_instance() {
+  # 停掉 proot Ubuntu 容器里的 bililive-go（wrapper + 主进程）
+  for p in $(ps -ef 2>/dev/null \
+      | awk '/proot .*bililive-go|bililive-go -c \/root\/bililive/ {print $2}'); do
+    kill "$p" 2>/dev/null && echo "  已停 proot 实例 pid $p"
+  done
+  sleep 2
+  # 兜底强杀仍存活的
+  for p in $(ps -ef 2>/dev/null \
+      | awk '/proot .*bililive-go|bililive-go -c \/root\/bililive/ {print $2}'); do
+    kill -9 "$p" 2>/dev/null
+  done
+}
+
+case "$1" in
+  start)
+    if [ "$2" = "-f" ]; then
+      "$0" stop >/dev/null 2>&1
+      stop_proot_instance
+    fi
+    if running; then
+      echo "已在运行 (pid $(cat "$PIDF"))，Web: http://192.168.1.147:$PORT"
+      exit 0
+    fi
+    if port_busy; then
+      echo "⚠ Web 端口 $PORT 已被占用（多半是 proot Ubuntu 里另一套 bililive-go）。"
+      echo "  要抢过来: bl start -f"
+      exit 1
+    fi
+    termux-wake-lock 2>/dev/null
+    cd "$DIR" || exit 1
+    nohup ./bililive-go -c config.yml >> "$LOG" 2>&1 &
+    echo $! > "$PIDF"
+    sleep 3
+    if running; then
+      echo "已启动 (pid $(cat "$PIDF"))，Web: http://192.168.1.147:$PORT"
+    else
+      echo "启动失败，看日志: bl log"; exit 1
+    fi
+    ;;
+  stop)
+    if running; then
+      PID=$(cat "$PIDF")
+      # 先收掉它拉起的 ffmpeg/scheduler 子进程，再杀主进程
+      for c in $(ps -ef 2>/dev/null | awk -v pp="$PID" '$3 == pp {print $2}'); do
+        kill "$c" 2>/dev/null
+      done
+      kill "$PID" 2>/dev/null
+      sleep 1
+      kill -9 "$PID" 2>/dev/null
+      echo "已停止 (pid $PID)"
+    else
+      echo "未在运行"
+    fi
+    rm -f "$PIDF"
+    termux-wake-unlock 2>/dev/null
+    ;;
+  restart)
+    "$0" stop
+    sleep 1
+    "$0" start "$2"
+    ;;
+  status)
+    if running; then
+      echo "运行中 (pid $(cat "$PIDF"))"
+      INFO=$(curl -s --max-time 4 "http://127.0.0.1:$PORT/api/info")
+      [ -n "$INFO" ] && echo "  $INFO" || echo "  (Web 未响应)"
+    else
+      echo "未运行"
+    fi
+    if port_busy; then
+      echo "端口 $PORT: 有监听"
+    else
+      echo "端口 $PORT: 空闲"
+    fi
+    ;;
+  log)
+    tail -n "${2:-40}" "$LOG"
+    ;;
+  *)
+    cat << 'USAGE'
+bl —— bililive-go(Termux 原生实例) 一键管理
+用法: bl start|stop|restart|status|log [参数]
+  bl start        启动（若 22290 被 proot 容器实例占用则拒绝并提示）
+  bl start -f     强制启动：先停掉 proot 容器里那套，再启动本套
+  bl stop         停止
+  bl restart      重启（可带 -f）
+  bl status       查看运行状态
+  bl log [行数]   看日志尾部（默认 40 行）
+USAGE
+    ;;
+esac

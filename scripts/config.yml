@@ -1,0 +1,111 @@
+# bililive-go @ G50 Termux 配置（2026-09-22）
+rpc:
+  enable: true
+  bind: 0.0.0.0:22290
+  sse_list_threshold: 50
+debug: false
+interval: 20
+out_put_path: /storage/emulated/0/bililive-go
+# Termux 官方 ffmpeg（pkg install ffmpeg）
+ffmpeg_path: /data/data/com.termux/files/usr/bin/ffmpeg
+log:
+  out_put_folder: /data/data/com.termux/files/home/bililive/logs
+  save_last_log: true
+  save_every_log: false
+  rotate_days: 7
+feature:
+  remove_symbol_other_character: false
+out_put_tmpl: ""
+video_split_strategies:
+  on_room_name_changed: false
+  max_duration: 0s
+  max_file_size: "0"
+on_record_finished:
+  convert_to_mp4: true
+  delete_flv_after_convert: false
+  custom_commandline: ""
+  # Android/Termux 上 .NET BBCR 不可用，必须显式关闭
+  fix_flv_at_first: false
+  save_cover: false
+  cloud_upload:
+    enable: false
+    storage_name: ""
+    upload_path_tmpl: /录播归档/{{ .Platform }}/{{ .HostName }}/{{ .FileName }}
+    delete_after_upload: false
+    delete_all_after_upload: false
+    upload_subtitles: false
+  upload_timing: after_process
+  burn_subtitles: false
+  burn_subtitles_codec: libx264
+  burn_subtitles_crf: "18"
+  burn_subtitles_preset: medium
+  burn_delete_ass: false
+  burn_delete_source: false
+timeout_in_us: 60000000
+danmaku_enable: false
+danmaku:
+  font_size: 36
+  font_name: Microsoft YaHei
+  scroll_area: full
+  scroll_time: 10
+  resolution: 1920x1080
+  outline: 1
+  opacity: 128
+  record_gift: true
+  record_douyu_gift: true
+  record_douyin_gift: true
+  record_guard: true
+  record_super_chat: true
+  guard_position: bottom-left
+  sc_position: bottom-left
+live_rooms: []
+cookies: {}
+notify:
+  send_recording_summary: false
+  telegram:
+    enable: false
+    withNotification: true
+    botToken: ""
+    chatID: ""
+  email:
+    enable: false
+    smtpHost: smtp.qq.com
+    smtpPort: 465
+    senderEmail: ""
+    senderPassword: ""
+    recipientEmail: ""
+  ntfy:
+    enable: false
+    URL: https://ntfy.sh/xxxx
+    token: tk_xxxxxxxxx
+    tag: new
+  bark:
+    enable: false
+    serverURL: https://api.day.app
+    deviceKey: ""
+    sound: ""
+    group: bililive-go
+    icon: ""
+    level: ""
+  wxpusher:
+    enable: false
+    appToken: ""
+    uids: []
+app_data_path: /data/data/com.termux/files/home/bililive/appdata
+read_only_tool_folder: ""
+tool_root_folder: ""
+task_queue:
+  max_concurrent: 3
+proxy:
+  enable: false
+  url: ""
+openlist:
+  port: 5244
+  data_path: ""
+  username: ""
+  password: ""
+update:
+  auto_check: false
+  check_interval_hours: 6
+  auto_download: false
+  include_prerelease: false
